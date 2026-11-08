@@ -112,7 +112,7 @@ function renderStageChrome() {
     <button class="tool ${L === 'por-do-sol' ? 'on' : ''}" data-a="light" data-l="por-do-sol" title="Pôr do sol" aria-label="Iluminação pôr do sol">${icon('sunset', 17)}</button>
     <button class="tool ${L === 'dia' ? 'on' : ''}" data-a="light" data-l="dia" title="Dia" aria-label="Iluminação dia">${icon('sun', 17)}</button>
     <button class="tool" data-a="reset" title="Centralizar" aria-label="Centralizar câmera">${icon('scan-eye', 17)}</button>
-    <button class="tool" data-a="fullscreen" title="Tela cheia" aria-label="Tela cheia">${icon('maximize', 17)}</button>`;
+    <button class="tool" data-a="foco" title="Modo foco" aria-label="Modo foco">${icon('maximize', 17)}</button>`;
 }
 
 function mountEspelho() {
@@ -384,7 +384,7 @@ Object.assign(actions, {
   spin: () => { building.setAutoRotate(!building.isAutoRotate()); renderStageChrome(); },
   light: (d) => { building.setLighting(d.l); renderStageChrome(); },
   reset: () => building.resetView(),
-  fullscreen: () => { const s = document.getElementById('stage'); try { document.fullscreenElement ? document.exitFullscreen() : s.requestFullscreen?.(); } catch { } },
+  foco: () => { document.body.classList.toggle('foco'); setTimeout(() => window.dispatchEvent(new Event('resize')), 30); },
   proposta: (d) => modalProposta(+d.n),
   plan3d: (d) => modalPlan3D(+d.n),
   reservar: (d) => { const u = unidade(d.n); u.status = 'reservado'; toast(`Apto ${u.num} reservado por 24 h`, 'key'); refreshBuilding(); renderStageChrome(); renderPanel(); },

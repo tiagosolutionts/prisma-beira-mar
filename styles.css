@@ -325,3 +325,6 @@ tr.click { cursor: pointer; }
   .kpi .val { font-size: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+body.foco .rpanel { display: none !important; }
+body.foco .mirror { grid-template-columns: 1fr !important; }
