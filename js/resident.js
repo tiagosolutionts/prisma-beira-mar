@@ -1,6 +1,6 @@
 import { icon } from './icons.js';
 import { EMPREENDIMENTO, brl, cotas, consumo, documentos, AREAS } from './data.js';
-import { state, pendentes, chamadosAbertos, atraso, toast, qrSVG, encomendas, chamados, reservas, comunicados, unidade, onChange, emit } from './store.js';
+import { esc, nextId, novoCodigo, state, pendentes, chamadosAbertos, atraso, toast, qrSVG, encomendas, chamados, reservas, comunicados, unidade, onChange, emit } from './store.js';
 import { modalPix, modalPlan3D } from './app.js';
 import { planSVG } from './plan.js';
 
@@ -46,7 +46,7 @@ const SCREENS = {
     <div class="ma-hello">Boa tarde, ${m.nome.split(' ')[0]}</div>
     <div class="ma-card" style="border-color:rgba(45,212,238,.25)"><div class="row between"><span class="row" style="gap:6px;font-size:12px;font-weight:700;color:var(--cyan)">${icon('package', 14)}Na portaria agora</span><button style="font-size:12px;color:#b494ff;font-weight:600" data-ma="nav" data-s="corresp">Ver todas</button></div>
       <div style="margin-top:6px"><span style="font-size:30px;font-weight:800">${pend.length}</span> <span class="muted">${pend.length === 1 ? 'correspondência' : 'correspondências'} para retirar</span></div>
-      ${pend.length ? `<div class="ma-photos">${pend.slice(0, 2).map((e) => `<button class="ma-photo" data-ma="nav" data-s="enc" data-p="${e.id}"><img src="./assets/${e.foto}.jpg" alt="Foto da encomenda"><div class="cap"><b>${e.loja}</b><br><span>${e.local.toLowerCase()} · ${e.ha}</span></div></button>`).join('')}</div>` : '<div class="muted" style="font-size:12px;margin-top:6px">Nada para retirar. Avisaremos quando chegar.</div>'}
+      ${pend.length ? `<div class="ma-photos">${pend.slice(0, 2).map((e) => `<button class="ma-photo" data-ma="nav" data-s="enc" data-p="${e.id}"><img src="./assets/${e.foto}.jpg" alt="Foto da encomenda"><div class="cap"><b>${esc(e.loja)}</b><br><span>${e.local.toLowerCase()} · ${e.ha}</span></div></button>`).join('')}</div>` : '<div class="muted" style="font-size:12px;margin-top:6px">Nada para retirar. Avisaremos quando chegar.</div>'}
     </div>
     <div class="ma-two">
       <button class="ma-card ${a ? 'alert' : ''}" style="text-align:left" data-ma="nav" data-s="fin"><div class="row" style="gap:5px;font-size:11px;font-weight:700;color:${a ? '#ff8d98' : 'var(--green)'}">${icon('building-2', 13)}Condomínio</div><div style="font-weight:800;font-size:16px;margin-top:4px">${a ? 'Atrasado' : 'Em dia'}</div><div class="muted" style="font-size:11px">${a ? a.dias + ' dias · cota de outubro' : 'próxima: 10/11'}</div><div style="font-weight:800;margin-top:8px" class="num">${a ? brl(a.valor, true) : brl(1418.58, true)}</div></button>
@@ -66,16 +66,16 @@ const SCREENS = {
     const list = tab === 'retirar' ? pend : ret;
     return `${backBtn()}<div class="ma-h">Correspondências apto ${u.num}</div>
       <div class="pills" style="margin-bottom:12px"><button class="pill ${tab === 'retirar' ? 'on' : ''}" data-ma="nav" data-s="corresp" data-p="retirar">Para retirar ${pend.length}</button><button class="pill ${tab === 'ret' ? 'on' : ''}" data-ma="nav" data-s="corresp" data-p="ret">Retiradas ${ret.length}</button></div>
-      ${list.map((e) => `<button class="ma-li" style="width:100%;text-align:left" data-ma="nav" data-s="enc" data-p="${e.id}"><img class="thumb" src="./assets/${e.foto}.jpg" alt=""><div class="grow"><div class="t">${e.loja} <span class="muted" style="font-weight:500">${e.tipo}</span></div>${e.status === 'aguardando' ? '<span class="tag g" style="margin:3px 0">Disponível para retirar</span>' : '<span class="tag" style="margin:3px 0">Retirada</span>'}<div class="s">${icon('clock', 11)} ${e.recebido}</div><div class="s">${icon('map-pin', 11)} Portaria · ${e.local.toLowerCase()}</div></div>${icon('chevron-right', 16, 'muted')}</button>`).join('') || '<div class="ma-li muted" style="font-size:12.5px">Nada por aqui.</div>'}
+      ${list.map((e) => `<button class="ma-li" style="width:100%;text-align:left" data-ma="nav" data-s="enc" data-p="${e.id}"><img class="thumb" src="./assets/${e.foto}.jpg" alt=""><div class="grow"><div class="t">${esc(e.loja)} <span class="muted" style="font-weight:500">${e.tipo}</span></div>${e.status === 'aguardando' ? '<span class="tag g" style="margin:3px 0">Disponível para retirar</span>' : '<span class="tag" style="margin:3px 0">Retirada</span>'}<div class="s">${icon('clock', 11)} ${e.recebido}</div><div class="s">${icon('map-pin', 11)} Portaria · ${e.local.toLowerCase()}</div></div>${icon('chevron-right', 16, 'muted')}</button>`).join('') || '<div class="ma-li muted" style="font-size:12.5px">Nada por aqui.</div>'}
       <div class="row" style="gap:8px;font-size:11.5px;color:var(--muted);margin-top:8px;align-items:flex-start">${icon('info', 14)}Na portaria, mostre o QR do app ou diga o código de 4 números.</div>`;
   },
 
   enc(u) {
     const e = encomendas.find((x) => x.id === ctx.param);
-    return `${backBtn('corresp', 'Correspondências')}<div class="ma-h">${e.loja} · ${e.tipo}</div>
+    return `${backBtn('corresp', 'Correspondências')}<div class="ma-h">${esc(e.loja)} · ${e.tipo}</div>
       <div class="ma-photo" style="aspect-ratio:4/3;margin-bottom:12px"><img src="./assets/${e.foto}.jpg" alt="Foto da encomenda tirada pela portaria"><div class="cap">Foto tirada pela portaria · ${e.recebido}</div></div>
       ${e.status === 'aguardando' ? `<div class="ma-card" style="display:flex;gap:14px;align-items:center"><div class="qr">${qrSVG(`PRISMA|${e.id}|${e.codigo}`)}</div><div><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.08em">CÓDIGO DE RETIRADA</div><div class="num" style="font-size:32px;font-weight:800;letter-spacing:.14em">${e.codigo}</div><div class="muted" style="font-size:11px">Mostre na portaria</div></div></div>` : '<div class="ma-card muted">Retirada · obrigado!</div>'}
-      <div class="ma-card"><div class="kv"><div><div class="k">Local</div>${e.local}</div><div><div class="k">Recebido por</div>${e.recebidoPor}</div><div><div class="k">Chegou</div>${e.ha}</div><div><div class="k">Rastreio</div><span class="num">${e.rastreio}</span></div></div></div>
+      <div class="ma-card"><div class="kv"><div><div class="k">Local</div>${esc(e.local)}</div><div><div class="k">Recebido por</div>${e.recebidoPor}</div><div><div class="k">Chegou</div>${e.ha}</div><div><div class="k">Rastreio</div><span class="num">${e.rastreio}</span></div></div></div>
       ${e.status === 'aguardando' ? `<button class="btn block" data-ma="terceiro" data-p="${e.id}">${icon('user-round', 15)}Autorizar outra pessoa a retirar</button>` : ''}`;
   },
 
@@ -94,7 +94,7 @@ const SCREENS = {
     const all = chamados.filter((c) => c.unidade === u.num);
     return `${backBtn()}<div class="ma-h">Chamados</div>
       <button class="btn pri block" style="margin-bottom:12px" data-ma="nav" data-s="novoch">${icon('plus', 15)}Abrir chamado</button>
-      ${all.map((c) => `<div class="ma-card ${c.atrasado && c.status !== 'concluido' ? 'alert' : ''}"><div class="row between"><b>${c.titulo}</b>${c.status === 'concluido' ? '<span class="tag g">Concluído</span>' : c.status === 'andamento' ? '<span class="tag p">Em andamento</span>' : '<span class="tag a">Aberto</span>'}</div><div class="muted" style="font-size:12px;margin-top:4px">${c.desc}</div><div class="row wrap" style="gap:6px;margin-top:8px"><span class="tag">${c.categoria}</span><span class="tag ${c.atrasado && c.status !== 'concluido' ? 'r' : ''}">${icon('clock', 11)}${c.prazo}</span></div><div class="muted" style="font-size:11px;margin-top:6px">Aberto ${c.abertoEm} · ${c.responsavel}</div></div>`).join('') || '<div class="ma-li muted" style="font-size:12.5px">Você ainda não abriu chamados.</div>'}`;
+      ${all.map((c) => `<div class="ma-card ${c.atrasado && c.status !== 'concluido' ? 'alert' : ''}"><div class="row between"><b>${esc(c.titulo)}</b>${c.status === 'concluido' ? '<span class="tag g">Concluído</span>' : c.status === 'andamento' ? '<span class="tag p">Em andamento</span>' : '<span class="tag a">Aberto</span>'}</div><div class="muted" style="font-size:12px;margin-top:4px">${esc(c.desc)}</div><div class="row wrap" style="gap:6px;margin-top:8px"><span class="tag">${esc(c.categoria)}</span><span class="tag ${c.atrasado && c.status !== 'concluido' ? 'r' : ''}">${icon('clock', 11)}${c.prazo}</span></div><div class="muted" style="font-size:11px;margin-top:6px">Aberto ${c.abertoEm} · ${esc(c.responsavel)}</div></div>`).join('') || '<div class="ma-li muted" style="font-size:12.5px">Você ainda não abriu chamados.</div>'}`;
   },
   novoch() {
     return `${backBtn('chamados', 'Chamados')}<div class="ma-h">Novo chamado</div><form class="col" id="ma-fc"><label class="f">O que aconteceu?<input class="input" name="t" placeholder="Ex.: Tomada da varanda sem energia" required></label><label class="f">Categoria<select class="select" name="c"><option>Hidráulica</option><option>Elétrica</option><option>Manutenção</option><option>Convivência</option></select></label><label class="f">Detalhes<textarea class="input" name="d" rows="4"></textarea></label><button class="btn pri" data-ma="enviarch">${icon('send', 15)}Enviar para a administração</button></form>`;
@@ -124,7 +124,7 @@ const SCREENS = {
   },
 
   mural() {
-    return `${backBtn()}<div class="ma-h">Mural</div>${comunicados.map((c) => `<div class="ma-card"><div class="row between"><b>${c.titulo}</b><span class="tag ${c.tag === 'Novo' ? 'p' : ''}">${c.tag}</span></div><div class="muted" style="font-size:11px;margin:3px 0 6px">${c.autor} · ${c.quando}</div><div style="font-size:12.5px;color:#d6d6e4">${c.texto}</div></div>`).join('')}`;
+    return `${backBtn()}<div class="ma-h">Mural</div>${comunicados.map((c) => `<div class="ma-card"><div class="row between"><b>${esc(c.titulo)}</b><span class="tag ${c.tag === 'Novo' ? 'p' : ''}">${c.tag}</span></div><div class="muted" style="font-size:11px;margin:3px 0 6px">${esc(c.autor)} · ${c.quando}</div><div style="font-size:12.5px;color:#d6d6e4">${esc(c.texto)}</div></div>`).join('')}`;
   },
 
   docs(u) {
@@ -159,5 +159,5 @@ const MA = {
   terceiro: () => toast('Autorização enviada para a portaria', 'user-round'),
   plan3d: () => modalPlan3D(ctx.num),
   reservar: (d) => { reservas.push({ area: d.a, unidade: ctx.num, quem: unidade(ctx.num).morador.nome, quando: 'sáb · 15h às 19h', data: '14/11', status: 'confirmada' }); toast(`${d.a} reservado para sáb, 14/11`); emit('res'); },
-  enviarch: () => { const f = ctx.body.querySelector('#ma-fc'); if (!f.t.value.trim()) { f.t.focus(); return; } chamados.unshift({ id: 'CH-0' + (220 + chamados.length), unidade: ctx.num, titulo: f.t.value, desc: f.d.value || 'Sem detalhes.', categoria: f.c.value, prioridade: 'media', status: 'aberto', abertoEm: '03/11 17:40', prazo: 'vence em 2 dias', responsavel: 'Zelador · Sérgio' }); toast('Chamado enviado'); ctx.screen = 'chamados'; emit('ch'); },
+  enviarch: () => { const f = ctx.body.querySelector('#ma-fc'); if (!f.t.value.trim()) { f.t.focus(); return; } chamados.unshift({ id: nextId('CH-', chamados), unidade: ctx.num, titulo: f.t.value, desc: f.d.value || 'Sem detalhes.', categoria: f.c.value, prioridade: 'media', status: 'aberto', abertoEm: '03/11 17:40', prazo: 'vence em 2 dias', responsavel: 'Zelador · Sérgio' }); toast('Chamado enviado'); ctx.screen = 'chamados'; emit('ch'); },
 };

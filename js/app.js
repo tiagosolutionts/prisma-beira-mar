@@ -2,7 +2,7 @@ import { icon } from './icons.js';
 import { createBuilding } from './building.js';
 import { createPlan3D, planSVG, ambientes } from './plan.js';
 import { EMPREENDIMENTO, brl, mi, contasOutubro, historico, visitantes, PLANTAS } from './data.js';
-import { actions, state, emit, onChange, pendentes, chamadosAbertos, atraso, stats, toast, openModal, qrSVG, statusTag, unidades, encomendas, chamados, propostas, clientes, unidade } from './store.js';
+import { esc, nextId, novoCodigo, actions, state, emit, onChange, pendentes, chamadosAbertos, atraso, stats, toast, openModal, qrSVG, statusTag, unidades, encomendas, chamados, propostas, clientes, unidade } from './store.js';
 import { renderPage } from './pages.js';
 import { openResidentApp } from './resident.js';
 
@@ -175,7 +175,7 @@ function panelResumoCondo() {
   if (state.condoTab === 'encomendas') {
     lista = `<div class="section-t">Na portaria agora<span class="c">${naPort} itens</span></div><div class="list">${mor.filter((u) => pendentes(u.num).length).sort((a, b) => pendentes(b.num).length - pendentes(a.num).length).map((u) => { const p = pendentes(u.num); return `<button class="li" data-a="sel" data-n="${u.num}" style="text-align:left"><img class="thumb" src="./assets/${p[0].foto}.jpg" alt=""><div style="flex:1;min-width:0"><div class="t">Apto ${u.num} · ${u.morador.nome.split(' ')[0]}</div><div class="s">${p.map((e) => e.loja).join(', ')} · ${p[0].ha}</div></div><span class="tag ${p.length > 1 ? 'p' : 'c'}">${p.length}</span></button>`; }).join('')}</div>`;
   } else if (state.condoTab === 'chamados') {
-    lista = `<div class="section-t">Chamados por apartamento<span class="c">${ab.length} abertos</span></div><div class="list">${ab.map((c) => `<button class="li" data-a="sel" data-n="${c.unidade}" style="text-align:left"><div class="kpi"><div class="ico ${c.atrasado ? 'r' : 'a'}">${icon('wrench', 15)}</div></div><div style="flex:1;min-width:0"><div class="t">${c.titulo}</div><div class="s">Apto ${c.unidade} · ${c.categoria} · <span class="${c.atrasado ? 'red' : ''}">${c.prazo}</span></div></div></button>`).join('')}</div>`;
+    lista = `<div class="section-t">Chamados por apartamento<span class="c">${ab.length} abertos</span></div><div class="list">${ab.map((c) => `<button class="li" data-a="sel" data-n="${c.unidade}" style="text-align:left"><div class="kpi"><div class="ico ${c.atrasado ? 'r' : 'a'}">${icon('wrench', 15)}</div></div><div style="flex:1;min-width:0"><div class="t">${esc(c.titulo)}</div><div class="s">Apto ${c.unidade} · ${esc(c.categoria)} · <span class="${c.atrasado ? 'red' : ''}">${c.prazo}</span></div></div></button>`).join('')}</div>`;
   } else {
     lista = `<div class="section-t">Em atraso<span class="c">${inad.length} unidades</span></div><div class="list">${inad.map((u) => { const a = atraso(u.num); return `<button class="li" data-a="sel" data-n="${u.num}" style="text-align:left"><div class="av sm">${u.morador.iniciais}</div><div style="flex:1"><div class="t">Apto ${u.num} · ${u.morador.nome}</div><div class="s">Cota de outubro · ${a.dias} dias</div></div><b class="red num">${brl(a.valor, true)}</b></button>`; }).join('') || '<div class="li muted">Nenhuma unidade em atraso.</div>'}</div>`;
   }
@@ -188,7 +188,7 @@ function panelResumoCondo() {
       <div><div class="l">${icon('calendar-days', 13)}Reservas</div><div class="v">5</div><div class="x">esta semana</div></div>
     </div>
     ${lista}
-    <div><div class="section-t">Hoje no prédio<span class="c">portaria · ${EMPREENDIMENTO.porteiro}</span></div><div class="timeline">${visitantes.map((v) => `<div class="ti"><i></i><div><b>${v.hora}</b> · ${v.nome} <span class="muted">— ${v.tipo} · ${v.destino} · ${v.status}</span></div></div>`).join('')}</div></div>
+    <div><div class="section-t">Hoje no prédio<span class="c">portaria · ${EMPREENDIMENTO.porteiro}</span></div><div class="timeline">${visitantes.map((v) => `<div class="ti"><i></i><div><b>${v.hora}</b> · ${esc(v.nome)} <span class="muted">— ${v.tipo} · ${v.destino} · ${v.status}</span></div></div>`).join('')}</div></div>
     <div class="li" style="font-size:12px;color:var(--muted)">${icon('info', 16)}Toque num apartamento vermelho para abrir o CRM do morador.</div>`;
 }
 
@@ -210,8 +210,8 @@ function panelVenda(u) {
       : `<button class="btn pri block" data-a="vender" data-n="${u.num}">${icon('handshake', 16)}Converter em venda</button><button class="btn block" data-a="liberar" data-n="${u.num}">${icon('rotate-ccw', 16)}Liberar reserva</button>`}
       <button class="btn block" data-a="plan3d" data-n="${u.num}">${icon('armchair', 16)}Ver planta 3D mobiliada</button>
     </div>
-    ${interessados.length ? `<div><div class="section-t">Clientes interessados<span class="c">${interessados.length}</span></div><div class="list">${interessados.map((c) => `<div class="li"><div class="av sm">${c.nome.split(' ').map((x) => x[0]).slice(0, 2).join('')}</div><div style="flex:1"><div class="t">${c.nome}</div><div class="s">${({ novo: 'Novo contato', visita: 'Visita agendada', proposta: 'Proposta', reserva: 'Reserva' })[c.etapa]} · ${c.corretor}</div></div></div>`).join('')}</div></div>` : ''}
-    ${props.length ? `<div><div class="section-t">Propostas desta unidade</div><div class="list">${props.map((p) => `<div class="li"><div style="flex:1"><div class="t">${p.id} · ${p.cliente}</div><div class="s">${brl(p.valor)} · ${p.desconto}% desc. · válida até ${p.validade}</div></div>${propTag(p.status)}</div>`).join('')}</div></div>` : ''}`;
+    ${interessados.length ? `<div><div class="section-t">Clientes interessados<span class="c">${interessados.length}</span></div><div class="list">${interessados.map((c) => `<div class="li"><div class="av sm">${c.nome.split(' ').map((x) => x[0]).slice(0, 2).join('')}</div><div style="flex:1"><div class="t">${esc(c.nome)}</div><div class="s">${({ novo: 'Novo contato', visita: 'Visita agendada', proposta: 'Proposta', reserva: 'Reserva' })[c.etapa]} · ${c.corretor}</div></div></div>`).join('')}</div></div>` : ''}
+    ${props.length ? `<div><div class="section-t">Propostas desta unidade</div><div class="list">${props.map((p) => `<div class="li"><div style="flex:1"><div class="t">${p.id} · ${esc(p.cliente)}</div><div class="s">${brl(p.valor)} · ${p.desconto}% desc. · válida até ${p.validade}</div></div>${propTag(p.status)}</div>`).join('')}</div></div>` : ''}`;
 }
 export const propTag = (s) => ({ enviada: '<span class="tag p">Enviada</span>', analise: '<span class="tag a">Em análise</span>', aceita: '<span class="tag g">Aceita</span>', recusada: '<span class="tag r">Recusada</span>' })[s];
 
@@ -225,7 +225,7 @@ function panelMorador(u) {
       <div class="h1" style="margin-top:4px">Apto ${u.num}</div>
       <div class="sub">${P.quartos} quartos (${P.suites} suíte) · ${P.area} m² · ${pend.length} ${pend.length === 1 ? 'encomenda' : 'encomendas'} na portaria</div></div>
     <div class="card glow">
-      <div class="row"><div class="av">${m.iniciais}</div><div><div class="faint" style="font-size:11px">mora desde ${m.desde}</div><div style="font-weight:800;font-size:16px">${m.nome}</div><div class="s muted" style="font-size:12px">${m.moradores} moradores${m.pet ? ' · ' + (m.pet === '1 pet' ? '1 pet' : '1 ' + m.pet) : ''} · vaga ${m.vaga}</div></div></div>
+      <div class="row"><div class="av">${m.iniciais}</div><div><div class="faint" style="font-size:11px">mora desde ${m.desde}</div><div style="font-weight:800;font-size:16px">${esc(m.nome)}</div><div class="s muted" style="font-size:12px">${m.moradores} moradores${m.pet ? ' · ' + (m.pet === '1 pet' ? '1 pet' : '1 ' + m.pet) : ''} · vaga ${m.vaga}</div></div></div>
       <div class="col" style="gap:4px;margin-top:12px;font-size:12.5px"><span class="row" style="gap:8px">${icon('phone', 14, 'muted')}${m.telefone}</span><span class="row" style="gap:8px">${icon('mail', 14, 'muted')}${m.email}</span></div>
       <div class="row" style="margin-top:12px;gap:8px"><button class="btn wa sm" style="flex:1" data-a="wa" data-n="${u.num}">${icon('message-circle', 15)}WhatsApp</button><button class="btn sm" style="flex:1" data-a="focus" data-n="${u.num}">${icon('building-2', 15)}Ver no prédio</button></div>
     </div>
@@ -238,17 +238,17 @@ function panelMorador(u) {
 
     <div><div class="section-t">${icon('package', 15)} Encomendas na portaria<span class="c">${pend.length}</span></div><div class="list">
       ${pend.map((e) => `<div class="li" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div class="row" data-a="parcel" data-id="${e.id}" style="cursor:pointer"><img class="thumb" src="./assets/${e.foto}.jpg" alt="Foto da encomenda"><div style="flex:1;min-width:0"><div class="t">${e.loja}</div><div class="s">${cap(e.tipo)} · para ${m.nome.split(' ')[0]}</div><div class="s">Chegou ${e.ha} · por ${e.recebidoPor} · ${e.id}</div></div></div>
-        <div class="kv" style="grid-template-columns:1fr 1fr 1fr;font-size:12px"><div><div class="k">Local</div>${e.local}</div><div><div class="k">Retirada</div><b class="num">${e.codigo}</b></div><div><div class="k">Aviso no app</div><span class="green">✓ visto</span></div></div>
+        <div class="row" data-a="parcel" data-id="${e.id}" style="cursor:pointer"><img class="thumb" src="./assets/${e.foto}.jpg" alt="Foto da encomenda"><div style="flex:1;min-width:0"><div class="t">${esc(e.loja)}</div><div class="s">${cap(e.tipo)} · para ${m.nome.split(' ')[0]}</div><div class="s">Chegou ${e.ha} · por ${e.recebidoPor} · ${e.id}</div></div></div>
+        <div class="kv" style="grid-template-columns:1fr 1fr 1fr;font-size:12px"><div><div class="k">Local</div>${esc(e.local)}</div><div><div class="k">Retirada</div><b class="num">${e.codigo}</b></div><div><div class="k">Aviso no app</div><span class="green">✓ visto</span></div></div>
         <div class="row" style="gap:6px"><button class="btn wa sm" style="flex:1" data-a="avisar" data-id="${e.id}">${icon('message-circle', 14)}Avisar</button><button class="btn ok sm" style="flex:1" data-a="entregar" data-id="${e.id}">${icon('check', 14)}Entregar</button></div>
       </div>`).join('') || '<div class="li muted" style="font-size:12.5px">Nada na portaria para este apartamento.</div>'}
     </div></div>
 
     <div><div class="section-t">${icon('wrench', 15)} Chamados<button class="btn xs" data-a="novo-chamado" data-n="${u.num}">${icon('plus', 13)}Abrir chamado</button></div><div class="list">
       ${chs.map((c) => `<div class="li" style="flex-direction:column;align-items:stretch;gap:8px;${c.atrasado ? 'border-color:rgba(255,77,94,.35);background:linear-gradient(180deg,rgba(255,77,94,.12),rgba(255,77,94,.03))' : ''}">
-        <div><div class="row between"><div class="t">${c.titulo}</div>${c.status === 'aberto' ? '<span class="tag a">Aberto</span>' : '<span class="tag p">Em andamento</span>'}</div><div class="s" style="margin-top:3px">${c.desc}</div>
+        <div><div class="row between"><div class="t">${esc(c.titulo)}</div>${c.status === 'aberto' ? '<span class="tag a">Aberto</span>' : '<span class="tag p">Em andamento</span>'}</div><div class="s" style="margin-top:3px">${esc(c.desc)}</div>
         <div class="row wrap" style="gap:6px;margin-top:6px"><span class="tag ${c.prioridade === 'alta' ? 'r' : ''}">${c.prioridade === 'alta' ? 'Alta' : c.prioridade === 'media' ? 'Média' : 'Baixa'}</span><span class="tag ${c.atrasado ? 'r' : ''}">${icon('clock', 11)}${c.prazo}</span></div>
-        <div class="s" style="margin-top:6px">Aberto ${c.abertoEm} · ${c.responsavel}</div></div>
+        <div class="s" style="margin-top:6px">Aberto ${c.abertoEm} · ${esc(c.responsavel)}</div></div>
         <div class="row" style="gap:6px">${c.status === 'aberto' ? `<button class="btn sm" style="flex:1" data-a="ch-iniciar" data-id="${c.id}">${icon('play', 14)}Iniciar</button>` : ''}<button class="btn ok sm" style="flex:1" data-a="ch-concluir" data-id="${c.id}">${icon('check-check', 14)}Concluir</button></div>
       </div>`).join('') || '<div class="li muted" style="font-size:12.5px">Nenhum chamado aberto.</div>'}
     </div></div>
@@ -261,7 +261,7 @@ function panelMorador(u) {
         <div class="row" style="gap:6px;margin-top:10px"><button class="btn sm pri" style="flex:1" data-a="pix" data-n="${u.num}">${icon('qr-code', 14)}2ª via com Pix</button><button class="btn sm ok" style="flex:1" data-a="marcar-pago" data-n="${u.num}">${icon('check', 14)}Marcar pago</button></div>
       </div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${contas.map((c) => { const pago = state.contasPagas.has(`${u.num}:${c.id}`) || c.status === 'pago' || (c.id === 'cond' && !a); const late = c.id === 'cond' && a; return `<div class="li" style="flex-direction:column;align-items:stretch;gap:2px;${late ? 'border-color:rgba(255,77,94,.35)' : ''}"><div class="row between"><span class="row" style="gap:6px;font-size:12px;font-weight:700">${icon(c.icon, 14, 'muted')}${c.nome}</span></div><b class="num" style="font-size:16px">${brl(c.valor, true)}</b><span class="s">${late ? `<span class="red">Atrasado ${a.dias} dias</span>` : pago ? '<span class="green">● Pago</span>' : '<span class="green">● Em dia</span>'} · ${c.venc}</span>${!pago && !late ? `<button class="btn xs" style="margin-top:6px" data-a="conta-paga" data-n="${u.num}" data-c="${c.id}">Marcar pago</button>` : ''}</div>`; }).join('')}
+        ${contas.map((c) => { const pago = state.contasPagas.has(`${u.num}:${c.id}`) || c.status === 'pago' || (c.id === 'cond' && !a); const late = c.id === 'cond' && a; return `<div class="li" style="flex-direction:column;align-items:stretch;gap:2px;${late ? 'border-color:rgba(255,77,94,.35)' : ''}"><div class="row between"><span class="row" style="gap:6px;font-size:12px;font-weight:700">${icon(c.icon, 14, 'muted')}${esc(c.nome)}</span></div><b class="num" style="font-size:16px">${brl(c.valor, true)}</b><span class="s">${late ? `<span class="red">Atrasado ${a.dias} dias</span>` : pago ? '<span class="green">● Pago</span>' : '<span class="green">● Em dia</span>'} · ${c.venc}</span>${!pago && !late ? `<button class="btn xs" style="margin-top:6px" data-a="conta-paga" data-n="${u.num}" data-c="${c.id}">Marcar pago</button>` : ''}</div>`; }).join('')}
       </div></div>
 
     <div><div class="section-t">${icon('scroll-text', 15)} Histórico</div><div class="timeline">${historico(u).map(([ic, t, s]) => `<div class="ti"><i></i><div><b>${t}</b> <span class="muted">· ${s}</span></div></div>`).join('')}</div></div>
@@ -275,7 +275,7 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 function waText(u) {
   const m = u.morador; const pend = pendentes(u.num); const a = atraso(u.num);
   let t = `Olá, ${m.nome.split(' ')[0]}! Aqui é da portaria do ${EMPREENDIMENTO.nome}.`;
-  if (pend.length) t += ` Você tem ${pend.length} ${pend.length > 1 ? 'encomendas' : 'encomenda'} aguardando (${pend.map((e) => `${e.loja} – ${e.local}, código ${e.codigo}`).join('; ')}).`;
+  if (pend.length) t += ` Você tem ${pend.length} ${pend.length > 1 ? 'encomendas' : 'encomenda'} aguardando (${pend.map((e) => `${esc(e.loja)} – ${esc(e.local)}, código ${e.codigo}`).join('; ')}).`;
   if (a) t += ` Lembrete: a cota de outubro está em aberto (${brl(a.valor, true)}). A 2ª via com Pix está no app.`;
   return t + ' Qualquer dúvida, estamos à disposição.';
 }
@@ -285,7 +285,7 @@ function modalProposta(num) {
   const u = unidade(num);
   openModal(`<div class="modal-h"><div><div class="eyebrow">Nova proposta</div><div class="h2" style="font-size:18px">Apto ${num} · ${u.planta.quartos} quartos · ${u.planta.area} m²</div></div><button class="btn icon sm" data-close aria-label="Fechar">${icon('x', 16)}</button></div>
     <div class="modal-b"><form id="fp" class="col" style="gap:12px">
-      <label class="f">Cliente<select class="select" name="cliente">${clientes.filter((c) => c.etapa !== 'contrato').map((c) => `<option>${c.nome}</option>`).join('')}</select></label>
+      <label class="f">Cliente<select class="select" name="cliente">${clientes.filter((c) => c.etapa !== 'contrato').map((c) => `<option>${esc(c.nome)}</option>`).join('')}</select></label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <label class="f">Desconto (%)<input class="input" name="desc" type="number" min="0" max="10" step="0.5" value="3"></label>
         <label class="f">Entrada (%)<input class="input" name="ent" type="number" min="10" max="100" step="5" value="30"></label>
@@ -296,12 +296,12 @@ function modalProposta(num) {
     <div class="modal-f"><button class="btn" data-close>Cancelar</button><button class="btn pri" id="psend">${icon('send', 15)}Gerar e enviar proposta</button></div>`, '', (m, close) => {
     const f = m.querySelector('#fp');
     const calc = () => {
-      const d = +f.desc.value || 0, e = +f.ent.value || 0, n = +f.parc.value; const total = Math.round(u.preco * (1 - d / 100)); const ent = total * e / 100; const parc = (total - ent) / n;
+      const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v)); const d = clamp(+f.desc.value || 0, 0, 10), e = clamp(+f.ent.value || 0, 10, 100), n = Math.max(1, +f.parc.value || 1); const total = Math.round(u.preco * (1 - d / 100)); const ent = total * e / 100; const parc = (total - ent) / n;
       m.querySelector('#psum').innerHTML = `<div class="row between"><span class="muted">Tabela</span><span class="num">${brl(u.preco)}</span></div><div class="row between" style="margin-top:4px"><span class="muted">Desconto</span><span class="num green">− ${brl(u.preco - total)}</span></div><div class="sep" style="margin:10px 0"></div><div class="row between"><b>Valor total</b><b class="num" style="font-size:20px">${brl(total)}</b></div><div class="row between" style="margin-top:6px;font-size:12.5px"><span class="muted">Entrada</span><span class="num">${brl(ent)}</span></div><div class="row between" style="font-size:12.5px"><span class="muted">${n}× mensais</span><span class="num">${brl(parc, true)}</span></div>`;
       return { total, d };
     };
     f.oninput = calc; calc();
-    m.querySelector('#psend').onclick = () => { const { total, d } = calc(); const id = 'PR-' + (419 + propostas.length - 7); propostas.unshift({ id, cliente: f.cliente.value, unidade: num, valor: total, desconto: d, status: 'enviada', validade: '10/11' }); close(); toast(`Proposta ${id} enviada para ${f.cliente.value}`); renderPanel(); };
+    m.querySelector('#psend').onclick = () => { const { total, d } = calc(); const id = nextId('PR-', propostas); propostas.unshift({ id, cliente: f.cliente.value, unidade: num, valor: total, desconto: d, status: 'enviada', validade: '10/11' }); close(); toast(`Proposta ${id} enviada para ${esc(f.cliente.value)}`); renderPanel(); };
   });
 }
 function modalWA(u, texto) {
@@ -316,9 +316,9 @@ export function modalParcel(id) {
   const e = encomendas.find((x) => x.id === id); const u = unidade(e.unidade);
   openModal(`<div class="parcel-detail"><img src="./assets/${e.foto}.jpg" alt="Foto da encomenda tirada na portaria">
     <div class="col" style="padding:18px;gap:12px">
-      <div class="row between"><div><div class="h2" style="font-size:18px">${e.loja} · ${e.tipo}</div><div class="sub" style="margin:2px 0 0">${e.id} · apto ${e.unidade} · chegou ${e.ha}</div></div><button class="btn icon sm" data-close aria-label="Fechar">${icon('x', 16)}</button></div>
+      <div class="row between"><div><div class="h2" style="font-size:18px">${esc(e.loja)} · ${e.tipo}</div><div class="sub" style="margin:2px 0 0">${e.id} · apto ${e.unidade} · chegou ${e.ha}</div></div><button class="btn icon sm" data-close aria-label="Fechar">${icon('x', 16)}</button></div>
       ${e.status === 'aguardando' ? '<span class="tag g" style="width:max-content"><i class="d"></i>Disponível para retirar</span>' : '<span class="tag" style="width:max-content">Retirada</span>'}
-      <div class="kv"><div><div class="k">Unidade</div>Apto ${e.unidade}</div><div><div class="k">Destinatário</div>${u.morador?.nome || '—'}</div><div><div class="k">Tipo</div>${cap(e.tipo)}</div><div><div class="k">Recebido</div>${e.recebido}</div><div><div class="k">Local</div>${e.local}</div><div><div class="k">Recebido por</div>${e.recebidoPor} · portaria</div><div><div class="k">Rastreio</div><span class="num">${e.rastreio}</span></div><div><div class="k">Aviso</div>Enviado · ${e.status === 'aguardando' ? 'ainda não lido' : 'lido'}</div></div>
+      <div class="kv"><div><div class="k">Unidade</div>Apto ${e.unidade}</div><div><div class="k">Destinatário</div>${u.morador?.nome || '—'}</div><div><div class="k">Tipo</div>${cap(e.tipo)}</div><div><div class="k">Recebido</div>${e.recebido}</div><div><div class="k">Local</div>${esc(e.local)}</div><div><div class="k">Recebido por</div>${e.recebidoPor} · portaria</div><div><div class="k">Rastreio</div><span class="num">${e.rastreio}</span></div><div><div class="k">Aviso</div>Enviado · ${e.status === 'aguardando' ? 'ainda não lido' : 'lido'}</div></div>
       <div class="row" style="gap:12px;align-items:flex-start"><div class="qr">${qrSVG(`PRISMA|${e.id}|${e.codigo}`)}</div><div><div class="k eyebrow" style="font-size:10px">Código de retirada</div><div style="font-size:28px;font-weight:800;letter-spacing:.12em" class="num">${e.codigo}</div><div class="s muted" style="font-size:11.5px">QR de retirada · o morador mostra no app</div></div></div>
       <div><div class="eyebrow" style="font-size:10px;margin-bottom:6px">Histórico da correspondência</div><div class="timeline"><div class="ti"><i></i><div>${e.recebido.slice(0, 5)} ${e.recebido.slice(11)} · Registrada na portaria por ${e.recebidoPor}</div></div><div class="ti"><i></i><div>${e.recebido.slice(0, 5)} ${e.recebido.slice(11)} · Aviso enviado no app e no WhatsApp</div></div></div></div>
       <div class="row" style="gap:8px;margin-top:auto;justify-content:flex-end;flex-wrap:wrap"><button class="btn" data-close>Fechar</button><button class="btn wa" data-a="avisar" data-id="${e.id}" data-close>${icon('message-circle', 15)}Avisar</button>${e.status === 'aguardando' ? `<button class="btn pri" data-a="entregar" data-id="${e.id}" data-close>${icon('check', 15)}Entregar</button>` : ''}</div>
@@ -356,7 +356,7 @@ function modalNovoChamado(num) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Categoria<select class="select" name="c"><option>Hidráulica</option><option>Elétrica</option><option>Manutenção</option><option>Estrutural</option><option>Convivência</option></select></label><label class="f">Prioridade<select class="select" name="p"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option></select></label></div>
     <label class="f">Descrição<textarea class="input" name="d" rows="3"></textarea></label></form></div>
   <div class="modal-f"><button class="btn" data-close>Cancelar</button><button class="btn pri" id="cs">Abrir chamado</button></div>`, '', (m, close) => {
-    m.querySelector('#cs').onclick = () => { const f = m.querySelector('#fc'); if (!f.t.value.trim()) { f.t.focus(); return; } chamados.unshift({ id: 'CH-0' + (215 + chamados.length - 6), unidade: num || +f.un.value, titulo: f.t.value, desc: f.d.value || 'Sem descrição.', categoria: f.c.value, prioridade: f.p.value, status: 'aberto', abertoEm: '03/11 17:40', prazo: 'vence em 2 dias', responsavel: 'Zelador · Sérgio' }); close(); toast('Chamado aberto'); emit('ch'); };
+    m.querySelector('#cs').onclick = () => { const f = m.querySelector('#fc'); if (!f.t.value.trim()) { f.t.focus(); return; } chamados.unshift({ id: nextId('CH-', chamados), unidade: num || +f.un.value, titulo: f.t.value, desc: f.d.value || 'Sem descrição.', categoria: f.c.value, prioridade: f.p.value, status: 'aberto', abertoEm: '03/11 17:40', prazo: 'vence em 2 dias', responsavel: 'Zelador · Sérgio' }); close(); toast('Chamado aberto'); emit('ch'); };
   });
 }
 
@@ -392,11 +392,11 @@ Object.assign(actions, {
   vender: (d) => { const u = unidade(d.n); u.status = 'vendido'; u.morador = { nome: 'Marcelo Ventura', moradores: 3, pet: null, desde: 'nov/2026', iniciais: 'MV', telefone: '(00) 98812-4410', email: 'marcelo.ventura@exemplo.com.br', vaga: 'G1-34', corretor: 'Paulo Costa' }; toast(`Venda do apto ${u.num} registrada`, 'handshake'); refreshBuilding(); renderStageChrome(); renderPanel(); renderNav(); },
   wa: (d) => modalWA(unidade(d.n), waText(unidade(d.n))),
   'wa-send': () => toast('Abrindo o WhatsApp…', 'message-circle'),
-  avisar: (d) => { const e = encomendas.find((x) => x.id === d.id); const u = unidade(e.unidade); modalWA(u, `Olá, ${u.morador.nome.split(' ')[0]}! Chegou uma encomenda para você na portaria do ${EMPREENDIMENTO.nome}: ${e.loja} (${e.tipo}), em ${e.local}. Código de retirada: ${e.codigo}.`); },
-  entregar: (d) => { const e = encomendas.find((x) => x.id === d.id); e.status = 'retirada'; e.ha = 'retirada agora'; toast(`Encomenda ${e.loja} entregue ao apto ${e.unidade}`, 'package'); emit('enc'); },
+  avisar: (d) => { const e = encomendas.find((x) => x.id === d.id); const u = unidade(e.unidade); modalWA(u, `Olá, ${u.morador.nome.split(' ')[0]}! Chegou uma encomenda para você na portaria do ${EMPREENDIMENTO.nome}: ${esc(e.loja)} (${e.tipo}), em ${esc(e.local)}. Código de retirada: ${e.codigo}.`); },
+  entregar: (d) => { const e = encomendas.find((x) => x.id === d.id); e.status = 'retirada'; e.ha = 'retirada agora'; toast(`Encomenda ${esc(e.loja)} entregue ao apto ${e.unidade}`, 'package'); emit('enc'); },
   parcel: (d) => modalParcel(d.id),
-  'ch-iniciar': (d) => { const c = chamados.find((x) => x.id === d.id); c.status = 'andamento'; toast(`Chamado “${c.titulo}” iniciado`, 'play'); emit('ch'); },
-  'ch-concluir': (d) => { const c = chamados.find((x) => x.id === d.id); c.status = 'concluido'; c.atrasado = false; c.prazo = 'concluído 03/11'; toast(`Chamado “${c.titulo}” concluído`, 'check-check'); emit('ch'); },
+  'ch-iniciar': (d) => { const c = chamados.find((x) => x.id === d.id); c.status = 'andamento'; toast(`Chamado “${esc(c.titulo)}” iniciado`, 'play'); emit('ch'); },
+  'ch-concluir': (d) => { const c = chamados.find((x) => x.id === d.id); c.status = 'concluido'; c.atrasado = false; c.prazo = 'concluído 03/11'; toast(`Chamado “${esc(c.titulo)}” concluído`, 'check-check'); emit('ch'); },
   'novo-chamado': (d) => modalNovoChamado(d.n ? +d.n : null),
   'marcar-pago': (d) => markPaid(+d.n),
   'conta-paga': (d) => { state.contasPagas.add(`${d.n}:${d.c}`); toast('Conta marcada como paga'); renderPanel(); },

@@ -1,6 +1,22 @@
 import { unidades, encomendas, chamados, ATRASOS, propostas, clientes, reservas, comunicados, unidade } from './data.js';
 import { icon } from './icons.js';
 
+export const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+export const nextId = (prefix, list) => {
+  let max = 0, width = 0;
+  list.forEach((x) => {
+    if (!String(x.id).startsWith(prefix)) return;
+    const d = String(x.id).slice(prefix.length);
+    if (/^\d+$/.test(d)) { max = Math.max(max, +d); width = Math.max(width, d.length); }
+  });
+  return prefix + String(max + 1).padStart(width, '0');
+};
+export const novoCodigo = () => {
+  let c;
+  do { c = String(1000 + Math.floor(Math.random() * 9000)); } while (encomendas.some((e) => e.codigo === c && e.status === 'aguardando'));
+  return c;
+};
 export const actions = {};
 export const state = {
   view: 'espelho', mode: 'vendas', condoTab: 'encomendas', selected: null, filtro: 'todas',
@@ -34,10 +50,10 @@ export function openModal(html, cls = '', onMount) {
   const bg = document.createElement('div'); bg.className = 'modal-bg';
   bg.innerHTML = `<div class="modal ${cls}" role="dialog" aria-modal="true">${html}</div>`;
   root.appendChild(bg);
-  const close = () => { bg.dispatchEvent(new CustomEvent('closed')); bg.remove(); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => { document.removeEventListener('keydown', onKey); bg.dispatchEvent(new CustomEvent('closed')); bg.remove(); };
   bg.addEventListener('click', (e) => { if (e.target === bg || e.target.closest('[data-close]')) close(); });
-  const esc = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } };
-  document.addEventListener('keydown', esc);
+  document.addEventListener('keydown', onKey);
   onMount?.(bg.querySelector('.modal'), close, bg);
   return close;
 }
